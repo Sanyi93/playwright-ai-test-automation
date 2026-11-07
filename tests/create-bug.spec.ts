@@ -1,19 +1,18 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 import users from "../users.json" with { type: "json" };
-import { LoginPage } from "./pages/LoginPage";
-import { BoardPage } from "./pages/BoardPage";
-import { CreateBugModal } from "./pages/CreateBugModal";
 
 const user = users.find((u) => u.username === "buggy");
 if (!user) {
   throw new Error('Default user "buggy" not found in users.json');
 }
 
-test("user can log in and create a new bug", async ({ page }) => {
+test("user can log in and create a new bug", async ({
+  page,
+  loginPage,
+  boardPage,
+  createBugModal,
+}) => {
   // Arrange
-  const loginPage = new LoginPage(page);
-  const boardPage = new BoardPage(page);
-  const createBugModal = new CreateBugModal(page);
   const bugTitle = `Login fails with special characters ${Date.now()}`;
 
   await loginPage.goto();

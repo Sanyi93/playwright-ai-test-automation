@@ -29,4 +29,8 @@ export class BoardPage {
   bugRowByTitle(title: string): Locator {
     return this.bugTable.locator("tbody tr", { hasText: title });
   }
+
+  async openBug(title: string): Promise<void> {
+    await this.bugRowByTitle(title).click();
+  }
 }

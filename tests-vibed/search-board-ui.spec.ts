@@ -1,6 +1,6 @@
 import { test, expect } from "./fixtures";
-import type { BoardPage } from "./pages/BoardPage";
-import type { CreateBugModal } from "./pages/CreateBugModal";
+import type { BoardPage } from "../tests/pages/BoardPage";
+import type { CreateBugModal } from "../tests/pages/CreateBugModal";
 import users from "../users.json" with { type: "json" };
 
 const [user] = users;

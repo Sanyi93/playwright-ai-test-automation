@@ -1,9 +1,9 @@
 import { test as base } from "@playwright/test";
-import { LoginPage } from "./pages/LoginPage";
-import { BoardPage } from "./pages/BoardPage";
-import { CreateBugModal } from "./pages/CreateBugModal";
-import { EditBugModal } from "./pages/EditBugModal";
-import { BugsApi } from "./api/BugsApi";
+import { LoginPage } from "../tests/pages/LoginPage";
+import { BoardPage } from "../tests/pages/BoardPage";
+import { CreateBugModal } from "../tests/pages/CreateBugModal";
+import { EditBugModal } from "../tests/pages/EditBugModal";
+import { BugsApi } from "../tests/api/BugsApi";
 
 interface Fixtures {
   loginPage: LoginPage;

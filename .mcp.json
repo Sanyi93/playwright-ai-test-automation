@@ -5,7 +5,10 @@
       "args": [
         "playwright",
         "run-test-mcp-server"
-      ]
+      ],
+      "env": {
+        "DISPLAY": ":99"
+      }
     }
   }
 }

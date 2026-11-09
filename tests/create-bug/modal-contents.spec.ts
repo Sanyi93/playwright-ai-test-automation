@@ -1,23 +1,47 @@
 // spec: specs/testing/create-bug.md
 // seed: tests/seed.spec.ts
 
-import { test, expect } from "../../tests-vibed/fixtures";
+import type { BrowserContext } from "@playwright/test";
+import { test, expect } from "../tests-vibed/fixtures";
+import { LoginPage } from "../pages/LoginPage";
 import users from "../../users.json" with { type: "json" };
 
 const [user] = users;
 
+type AuthState = Awaited<ReturnType<BrowserContext["storageState"]>>;
+let authState: AuthState | undefined;
+
 test.describe("Modal contents and defaults", () => {
-  test("New Bug button opens the Create bug modal with all fields", async ({
-    page,
-    loginPage,
-    boardPage,
-    createBugModal,
-  }) => {
-    // Starting state: logged in as buggy, on /board
+  // Each test gets its own browser context, sharing only the saved login.
+  test.use({
+    storageState: async ({}, use) => {
+      await use(authState);
+    },
+  });
+
+  // Arrange (shared): log in once and save the authentication state
+  test.beforeAll(async ({ browser, baseURL }) => {
+    const context = await browser.newContext({ baseURL });
+    const page = await context.newPage();
+    const loginPage = new LoginPage(page);
     await loginPage.goto();
     await loginPage.login(user.username, user.password);
     await expect(page).toHaveURL(/\/board$/);
+    authState = await context.storageState();
+    await context.close();
+  });
 
+  // Arrange (shared): every test starts on the board, already logged in
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/board");
+    await expect(page).toHaveURL(/\/board$/);
+  });
+
+  test("New Bug button opens the Create bug modal with all fields", async ({
+    page,
+    boardPage,
+    createBugModal,
+  }) => {
     // 1. From /board click the 'New Bug' button in the title bar.
     await boardPage.openNewBugModal();
 
@@ -68,5 +92,33 @@ test.describe("Modal contents and defaults", () => {
 
     // The Title input has focus
     await expect(createBugModal.titleInput).toBeFocused();
+  });
+
+  test("Create bug modal opens with owner set to the current user, severity MID and other fields empty", async ({
+    boardPage,
+    createBugModal,
+  }) => {
+    // Act
+    await boardPage.openNewBugModal();
+
+    // Assert
+    await expect(createBugModal.titleInput).toHaveValue("");
+    await expect(createBugModal.descriptionInput).toHaveValue("");
+    await expect(createBugModal.ownerInput).toHaveValue(user.username);
+    await expect(createBugModal.severitySelect).toHaveValue("mid");
+  });
+
+  test("Save button uses the primary theme color", async ({
+    boardPage,
+    createBugModal,
+  }) => {
+    // Act
+    await boardPage.openNewBugModal();
+
+    // Assert: #b8ae76 from specs/design/theme.md
+    await expect(createBugModal.saveButton).toHaveCSS(
+      "background-color",
+      "rgb(184, 174, 118)",
+    );
   });
 });

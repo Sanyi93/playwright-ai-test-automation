@@ -15,3 +15,6 @@ When working on the **BuggyBoard** web app (bug tracker SUT for the Playwright c
 6. **Write atomit tests rather than grand tours** so that every tests focuses on one thing and is easier to debug when it fails. 
    - Tests should follow the Arrange-Act-Assert pattern.
    - Each test should be independent and not rely on the state left by previous tests.
+7. **Share the test steps when it makes a sense** and use the "beforeEach()" or "beforeAll()" loop for those steps.
+   - Tests in one test case shall share the auth state - so that the login does not need to be perform repeatedly.
+    - Similarly if more test cases in one file start from the same page "outsource" this step to the before<>() loop

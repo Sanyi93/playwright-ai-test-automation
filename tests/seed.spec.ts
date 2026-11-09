@@ -1,4 +1,4 @@
-import { test, expect } from "../tests-vibed/fixtures";
+import { test, expect } from "./tests-vibed/fixtures";
 import users from "../users.json" with { type: "json" };
 
 const [user] = users;
@@ -10,3 +10,4 @@ test.describe("Test group", () => {
     await expect(page).toHaveURL(/\/board$/);
   });
 });
+

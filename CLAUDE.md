@@ -17,7 +17,7 @@ When working on the **BuggyBoard** web app (bug tracker SUT for the Playwright c
    - Tests should follow the Arrange-Act-Assert pattern.
    - Each test should be independent and not rely on the state left by previous tests.
 7. **Share the test steps when it makes a sense** and use the "beforeEach()" or "beforeAll()" loop for those steps.
-   - Tests in one test case shall share the auth state - so that the login does not need to be perform repeatedly.
+   - Tests in one test case shall share the auth state - so that the login does not need to be perform repeatedly. The shared login is the worker-scoped fixture in `tests/fixtures/auth.ts`: import `loggedInTest as test` from `tests/fixtures` instead of logging in inside `beforeAll()` (see `specs/engineering/test-automation-patterns.md`).
     - Similarly if more test cases in one file start from the same page "outsource" this step to the before<>() loop
 8. **Use page objects** in new and refactored Playwright tests instead of long, raw page call chains, as described in `specs/engineering/test-automation-patterns.md`.
    - Page object classes belong in `tests/pages/`, with one class per file and one class per page of the app.

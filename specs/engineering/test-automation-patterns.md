@@ -20,13 +20,13 @@ Project-wide patterns for the Playwright end-to-end tests in `tests/`. This file
 
 ### Current page objects
 
-| App page or region | Route or trigger | Page object |
-|---|---|---|
-| Login page | `/login` | `tests/pages/LoginPage.ts` |
-| Board page (title bar, search, bug table) | `/board` | `tests/pages/BoardPage.ts` |
-| Create bug modal | "New Bug" button on the board | `tests/pages/CreateBugModal.ts` |
-| Edit bug modal | clicking a bug row on the board | `tests/pages/EditBugModal.ts` |
-| Board column sorting | column headers of the board table | `tests/pages/Sorting.ts` |
+| App page or region | Route or trigger | Page object | Fixture |
+|---|---|---|---|
+| Login page | `/login` | `tests/pages/LoginPage.ts` | `loginPage` |
+| Board page (title bar, search, bug table) | `/board` | `tests/pages/BoardPage.ts` | `boardPage` |
+| Create bug modal | "New Bug" button on the board | `tests/pages/CreateBugModal.ts` | `createBugModal` |
+| Edit bug modal | clicking a bug row on the board | `tests/pages/EditBugModal.ts` | `editBugModal` |
+| Board column sorting | column headers of the board table | `tests/pages/Sorting.ts` | `sorting` |
 Update this table when you add a page object.
 
 ## How a page object class looks
@@ -74,11 +74,87 @@ export class LoginPage {
 - **Reusable checks may live in a page object** when the same multi-step check is needed by several tests, for example `Sorting.expectSortIndicator(column, direction)`. Name these methods `expect...`, and use web-first assertions (`await expect(locator)...`) inside them.
 - Page object actions should not hide assertions. Keep `click()`, `fill()` and similar methods free of checks.
 
-## Using page objects in tests
+## Fixtures
 
-- **Through fixtures:** every page object is registered in `tests/tests-vibed/fixtures.ts`, and tests receive it as a fixture, for example `async ({ boardPage, editBugModal }) => { ... }`. Import `test` and `expect` from that fixtures file, not from `@playwright/test`.
-- **Adding a page object:** create the class in `tests/pages/`, add it to the `Fixtures` interface and to `base.extend` in the fixtures file, and add it to the table above.
-- **Exception: `beforeAll`:** Playwright does not provide the `page` fixture in `beforeAll`. A shared login there creates its own context and page, and constructs the page object directly: `new LoginPage(page)`.
+These rules follow Playwright's guide to fixtures: https://playwright.dev/docs/test-fixtures
+
+### Core rule: tests use page object fixtures
+
+- **One fixture per page object:** every class in `tests/pages/` has a fixture that provides it. The fixture's name is the class name in camelCase, for example `LoginPage` → `loginPage` and `Sorting` → `sorting`.
+- **Tests never construct page objects:** specs and their hooks (`beforeEach`, `afterEach`, `beforeAll`, `afterAll`) request page objects as fixtures, for example `async ({ boardPage, editBugModal }) => { ... }`. They never call `new LoginPage(page)` or any other page object constructor. Only fixture files construct page objects.
+- **Import from the fixtures, not from Playwright:** specs import `test` and `expect` from `tests/fixtures`, never directly from `@playwright/test`. Type-only imports from `@playwright/test`, such as `Page` or `BrowserContext`, are still allowed.
+
+### Where fixture files live
+
+All fixture files are in `tests/fixtures/`. Each file covers one concern:
+
+| File | Contains |
+|---|---|
+| `tests/fixtures/pages.ts` | One test-scoped fixture for each page object in `tests/pages/`. |
+| `tests/fixtures/api.ts` | API helper fixtures, such as `bugsApi`, which also clean up the data they create. |
+| `tests/fixtures/auth.ts` | The shared login: a worker-scoped fixture that logs in once per worker and provides the saved storage state. |
+| `tests/fixtures/index.ts` | Combines the modules above with `mergeTests(...)` and exports `test` (page objects and API helpers; tests start logged out), `loggedInTest` (the same plus the shared login; tests start logged in) and `expect`. Specs import from here. |
+
+Add a new file only for a new concern. A new page object goes into `pages.ts`, not into a file of its own.
+
+### How a fixture is written
+
+- **Typed `test.extend`:** declare the fixtures' types and pass them as the type parameter. Test-scoped fixtures use the first type parameter, and worker-scoped fixtures use the second:
+
+  ```ts
+  import { test as base } from "@playwright/test";
+  import { LoginPage } from "../pages/LoginPage";
+  import { BoardPage } from "../pages/BoardPage";
+
+  type PageFixtures = {
+    loginPage: LoginPage;
+    boardPage: BoardPage;
+  };
+
+  export const test = base.extend<PageFixtures>({
+    loginPage: async ({ page }, use) => {
+      await use(new LoginPage(page));
+    },
+    boardPage: async ({ page }, use) => {
+      await use(new BoardPage(page));
+    },
+  });
+  ```
+
+- **Setup, `use`, teardown:** a fixture is `async (dependencies, use) => { ... }`. Code before `await use(value)` is setup, `value` is what the test receives, and code after `use` is teardown. Teardown runs even if the test fails, so cleanup belongs there, as in `bugsApi`, which deletes the bugs it created.
+- **Page object fixtures only construct:** a page object fixture creates the object and passes it to `use`. It does not navigate, log in or create data, so the test's Arrange step stays visible in the spec. Shared navigation and test data belong in `beforeEach`, or in a dedicated fixture when several files need the same setup.
+- **Test scope by default:** page object fixtures are test-scoped, so each test gets a new instance bound to its own `page`.
+- **Worker scope for expensive shared state:** use `{ scope: "worker" }` only for state that may be shared by every test in a worker, such as the login. Worker-scoped fixtures cannot depend on `page` or other test-scoped fixtures. They create their own context from `browser`.
+- **Combine with `mergeTests`:** `tests/fixtures/index.ts` merges the fixture modules and re-exports `expect`:
+
+  ```ts
+  import { mergeTests } from "@playwright/test";
+  import { test as pageTest } from "./pages";
+  import { test as apiTest } from "./api";
+  import { test as authTest } from "./auth";
+
+  export const test = mergeTests(pageTest, apiTest);
+  export const loggedInTest = mergeTests(test, authTest);
+  export { expect } from "@playwright/test";
+  ```
+
+- **Fixture names** use letters, numbers and underscores only, and start with a letter.
+
+### Shared login
+
+The login is the only state tests may share (`CLAUDE.md` rule 7). It is provided by `tests/fixtures/auth.ts`, instead of a `beforeAll` hook that constructs `LoginPage` itself:
+
+- A worker-scoped fixture, for example `authState`, creates its own browser context, logs in once per worker with `LoginPage`, saves `context.storageState()`, closes the context, and passes the state to `use`.
+- The same module overrides Playwright's built-in `storageState` fixture with that state, so every test that uses this module starts logged in, in its own fresh browser context.
+- Worker-scoped fixtures cannot use the test-scoped `baseURL` fixture, so `authState` reads it from `workerInfo.project.use.baseURL`.
+- Specs that need a logged-in user import `loggedInTest` under the usual name: `import { loggedInTest as test, expect } from "../fixtures";`. They then only navigate in `beforeEach`, for example to `/board`.
+- Specs that test the login itself, such as `tests/seed.spec.ts`, import the plain `test`, start logged out and log in through `loginPage`.
+
+### Adding a page object
+
+1. Create the class in `tests/pages/`, following "How a page object class looks" above.
+2. Add a fixture for it to `tests/fixtures/pages.ts`, named after the class in camelCase.
+3. Add a row for it to the "Current page objects" table, with its fixture name.
 
 ## Related rules
 

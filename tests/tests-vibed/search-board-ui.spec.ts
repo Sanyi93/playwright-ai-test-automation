@@ -27,11 +27,12 @@ test.describe("Search board (UI only)", () => {
     await loginPage.login(user.username, user.password);
   });
 
-  test.afterEach(async ({ boardPage, editBugModal }) => {
+  test.afterEach(async ({ boardPage, editBugModal, deleteBugConfirmModal }) => {
     await boardPage.search("");
     for (const title of createdTitles) {
       await boardPage.openBug(title);
       await editBugModal.delete();
+      await deleteBugConfirmModal.confirm();
       await expect(editBugModal.dialog).toBeHidden();
     }
   });

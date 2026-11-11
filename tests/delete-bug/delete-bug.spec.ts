@@ -63,6 +63,7 @@ test.describe("Deleting a bug", () => {
   test("deleting a bug closes the modal and removes its row from the board", async ({
     boardPage,
     editBugModal,
+    deleteBugConfirmModal,
   }) => {
     // Act
     await boardPage.openBug(targetBug.title);
@@ -70,6 +71,7 @@ test.describe("Deleting a bug", () => {
       `Edit bug #${targetBug.id}`,
     );
     await editBugModal.delete();
+    await deleteBugConfirmModal.confirm();
 
     // Assert
     await expect(editBugModal.dialog).toBeHidden();
@@ -82,6 +84,7 @@ test.describe("Deleting a bug", () => {
     request,
     boardPage,
     editBugModal,
+    deleteBugConfirmModal,
   }) => {
     // Act
     await boardPage.openBug(targetBug.title);
@@ -91,6 +94,7 @@ test.describe("Deleting a bug", () => {
         response.request().method() === "DELETE",
     );
     await editBugModal.delete();
+    await deleteBugConfirmModal.confirm();
 
     // Assert
     expect((await deleteResponse).status()).toBe(204);
@@ -108,10 +112,12 @@ test.describe("Deleting a bug", () => {
     page,
     boardPage,
     editBugModal,
+    deleteBugConfirmModal,
   }) => {
     // Act
     await boardPage.openBug(targetBug.title);
     await editBugModal.delete();
+    await deleteBugConfirmModal.confirm();
     await expect(editBugModal.dialog).toBeHidden();
     await page.reload();
 
@@ -126,6 +132,7 @@ test.describe("Deleting a bug", () => {
     request,
     boardPage,
     editBugModal,
+    deleteBugConfirmModal,
   }) => {
     // Arrange
     const keepFirst = await createBug(request, `${token} Keep first`, "high");
@@ -137,6 +144,7 @@ test.describe("Deleting a bug", () => {
     // Act
     await boardPage.openBug(targetBug.title);
     await editBugModal.delete();
+    await deleteBugConfirmModal.confirm();
 
     // Assert
     await expect(boardPage.bugRowByTitle(targetBug.title)).toHaveCount(0);
@@ -155,6 +163,7 @@ test.describe("Deleting a bug", () => {
     request,
     boardPage,
     editBugModal,
+    deleteBugConfirmModal,
   }) => {
     // Arrange
     const closeResponse = await request.put(`/api/bugs/${targetBug.id}`, {
@@ -169,6 +178,7 @@ test.describe("Deleting a bug", () => {
     await boardPage.openBug(targetBug.title);
     await expect(editBugModal.stateSelect).toHaveValue("closed");
     await editBugModal.delete();
+    await deleteBugConfirmModal.confirm();
 
     // Assert
     await expect(editBugModal.dialog).toBeHidden();
@@ -182,6 +192,7 @@ test.describe("Deleting a bug", () => {
     request,
     boardPage,
     editBugModal,
+    deleteBugConfirmModal,
   }) => {
     // Arrange: an unrelated bug guarantees the board is not empty, so it
     // shows "No bugs matched." rather than "No bugs." after the delete
@@ -199,6 +210,7 @@ test.describe("Deleting a bug", () => {
     // Act
     await boardPage.openBug(targetBug.title);
     await editBugModal.delete();
+    await deleteBugConfirmModal.confirm();
 
     // Assert
     await expect(editBugModal.dialog).toBeHidden();

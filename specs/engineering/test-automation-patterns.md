@@ -92,7 +92,7 @@ All fixture files are in `tests/fixtures/`. Each file covers one concern and bui
 | File | Extends | Contains |
 |---|---|---|
 | `tests/fixtures/pages.ts` | `@playwright/test` | One test-scoped fixture for each page object in `tests/pages/`. |
-| `tests/fixtures/api.ts` | `pages.ts` | API helper fixtures, which also clean up the data they create: `bugsApi` (create, `track()` and `createDeleted()` test bugs) and `token` (a unique title prefix per test; any bug still carrying it is deleted after the test). |
+| `tests/fixtures/api.ts` | `pages.ts` | API helper fixtures, which also clean up the data they create: `bugsApi` (create, `track()` and `createDeleted()` test bugs) and `token` (a unique title prefix per test; any bug still carrying it is deleted after the test). The classes and helpers these fixtures use live in `tests/api/`: `BugsApiClient.ts` (the API client behind `bugsApi`, plus the `StoredBug` and `ApiError` types) and `expectApiError.ts` (asserts an API error's status, `error` code and `message`). |
 | `tests/fixtures/auth.ts` | `api.ts` | The shared login: a worker-scoped fixture that logs in once per worker and provides the saved storage state. |
 
 Each file exports its `test` and re-exports `expect` from `@playwright/test`. There is no combining index file.
@@ -141,15 +141,15 @@ Adjust the relative path to the spec's folder: a spec directly in `tests/` uses 
   ```ts
   // tests/fixtures/api.ts
   import { test as base } from "./pages";
-  import { BugsApi } from "../api/BugsApi";
+  import { BugsApiClient } from "../api/BugsApiClient";
 
   type ApiFixtures = {
-    bugsApi: BugsApi;
+    bugsApi: BugsApiClient;
   };
 
   export const test = base.extend<ApiFixtures>({
     bugsApi: async ({ request }, use) => {
-      const bugsApi = new BugsApi(request);
+      const bugsApi = new BugsApiClient(request);
       await use(bugsApi);
       await bugsApi.deleteCreated();
     },

@@ -31,6 +31,14 @@ export class Sorting {
     return this.header(column).getByRole("button");
   }
 
+  /**
+   * The header button whose accessible name is exactly `column`. The sort
+   * arrow is aria-hidden, so it must not be part of the name.
+   */
+  headerButtonByExactName(column: SortColumn): Locator {
+    return this.table.getByRole("button", { name: column, exact: true });
+  }
+
   async sortBy(column: SortColumn): Promise<void> {
     await this.headerButton(column).click();
   }

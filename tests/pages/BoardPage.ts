@@ -7,6 +7,9 @@ export class BoardPage {
   readonly bugRows: Locator;
   readonly searchInput: Locator;
   readonly noBugsMatchedMessage: Locator;
+  readonly noBugsMessage: Locator;
+  readonly openFilterButton: Locator;
+  readonly closedFilterButton: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -16,6 +19,22 @@ export class BoardPage {
     this.bugRows = this.bugTable.locator("tbody").getByRole("button");
     this.searchInput = page.getByLabel("Search bugs by title");
     this.noBugsMatchedMessage = this.bugTable.getByText("No bugs matched.");
+    // Shown only when the database holds no bugs at all.
+    this.noBugsMessage = this.bugTable.getByText("No bugs.", { exact: true });
+    // exact: bug rows are buttons too, and a title may contain "Open" or "Closed".
+    this.openFilterButton = page.getByRole("button", { name: "Open", exact: true });
+    this.closedFilterButton = page.getByRole("button", {
+      name: "Closed",
+      exact: true,
+    });
+  }
+
+  async showOpenBugs(): Promise<void> {
+    await this.openFilterButton.click();
+  }
+
+  async showClosedBugs(): Promise<void> {
+    await this.closedFilterButton.click();
   }
 
   async openNewBugModal(): Promise<void> {

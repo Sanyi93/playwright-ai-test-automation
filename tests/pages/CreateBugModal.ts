@@ -18,10 +18,25 @@ export class CreateBugModal {
   readonly descriptionInput: Locator;
   readonly saveButton: Locator;
   readonly cancelButton: Locator;
+  readonly heading: Locator;
+  readonly closeButton: Locator;
+  readonly titleRequiredError: Locator;
+  readonly ownerRequiredError: Locator;
+  readonly descriptionRequiredError: Locator;
 
   constructor(page: Page) {
     this.page = page;
     this.dialog = page.getByRole("dialog", { name: "Create bug" });
+    this.heading = this.dialog.getByRole("heading", { name: "Create bug" });
+    this.closeButton = this.dialog.getByRole("button", {
+      name: "Close",
+      exact: true,
+    });
+    this.titleRequiredError = this.dialog.getByText("Title is required.");
+    this.ownerRequiredError = this.dialog.getByText("Owner is required.");
+    this.descriptionRequiredError = this.dialog.getByText(
+      "Description is required.",
+    );
     this.titleInput = this.dialog.getByLabel("Title");
     this.severitySelect = this.dialog.getByLabel("Severity");
     this.ownerInput = this.dialog.getByLabel("Owner");

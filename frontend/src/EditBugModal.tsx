@@ -1,4 +1,5 @@
 import { useState, useEffect, FormEvent, useRef } from "react";
+import { DeleteBugConfirmModal } from "./DeleteBugConfirmModal";
 
 export type Severity = "high" | "mid" | "low";
 
@@ -50,7 +51,9 @@ export function EditBugModal({ bug, onClose, onSaved }: EditBugModalProps) {
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
+  const deleteButtonRef = useRef<HTMLButtonElement>(null);
 
   const isOpen = bug !== null;
 
@@ -64,12 +67,14 @@ export function EditBugModal({ bug, onClose, onSaved }: EditBugModalProps) {
       setValidationErrors([]);
       setLoading(false);
       setDeleting(false);
+      setConfirmingDelete(false);
       queueMicrotask(() => titleInputRef.current?.focus());
     }
   }, [bug]);
 
   useEffect(() => {
-    if (!isOpen) return;
+    // While the delete confirmation is open, Escape belongs to it.
+    if (!isOpen || confirmingDelete) return;
     function handleEscape(e: KeyboardEvent) {
       if (e.key === "Escape") {
         e.preventDefault();
@@ -78,7 +83,7 @@ export function EditBugModal({ bug, onClose, onSaved }: EditBugModalProps) {
     }
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
-  }, [isOpen, onClose]);
+  }, [isOpen, confirmingDelete, onClose]);
 
   const initial = bug
     ? {
@@ -163,10 +168,21 @@ export function EditBugModal({ bug, onClose, onSaved }: EditBugModalProps) {
     onClose();
   }
 
-  async function handleDelete() {
+  /** The Delete button only asks for confirmation; nothing is deleted yet. */
+  function handleDeleteClick() {
     if (!bug || deleting || loading) return;
-    setDeleting(true);
     setValidationErrors([]);
+    setConfirmingDelete(true);
+  }
+
+  function handleCancelDelete() {
+    setConfirmingDelete(false);
+    queueMicrotask(() => deleteButtonRef.current?.focus());
+  }
+
+  async function handleConfirmDelete() {
+    if (!bug || deleting) return;
+    setDeleting(true);
     try {
       const res = await fetch(`/api/bugs/${bug.id}`, { method: "DELETE" });
       if (res.ok) {
@@ -180,12 +196,15 @@ export function EditBugModal({ bug, onClose, onSaved }: EditBugModalProps) {
       setValidationErrors(["Something went wrong. Please try again."]);
     } finally {
       setDeleting(false);
+      // On failure, close the confirmation; the error shows in this modal.
+      setConfirmingDelete(false);
     }
   }
 
   if (!isOpen || !bug) return null;
 
   return (
+    <>
     <div
       className="fixed inset-0 z-50 overflow-y-auto bg-stone-900/50"
       role="dialog"
@@ -310,12 +329,13 @@ export function EditBugModal({ bug, onClose, onSaved }: EditBugModalProps) {
           )}
           <div className="flex gap-3 justify-between pt-2">
             <button
+              ref={deleteButtonRef}
               type="button"
-              onClick={handleDelete}
+              onClick={handleDeleteClick}
               className="rounded px-4 py-2 text-sm font-medium text-red-700 border border-red-200 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={loading || deleting}
             >
-              {deleting ? "Deleting…" : "Delete"}
+              Delete
             </button>
             <div className="flex gap-3">
               <button
@@ -339,5 +359,14 @@ export function EditBugModal({ bug, onClose, onSaved }: EditBugModalProps) {
       </div>
       </div>
     </div>
+    {confirmingDelete && (
+      <DeleteBugConfirmModal
+        bug={bug}
+        deleting={deleting}
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      />
+    )}
+    </>
   );
 }

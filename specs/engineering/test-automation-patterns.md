@@ -27,7 +27,6 @@ Project-wide patterns for the Playwright end-to-end tests in `tests/`. This file
 | Create bug modal | "New Bug" button on the board | `tests/pages/CreateBugModal.ts` |
 | Edit bug modal | clicking a bug row on the board | `tests/pages/EditBugModal.ts` |
 | Board column sorting | column headers of the board table | `tests/pages/Sorting.ts` |
-
 Update this table when you add a page object.
 
 ## How a page object class looks

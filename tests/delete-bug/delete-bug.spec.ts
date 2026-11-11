@@ -2,16 +2,12 @@
 // seed: tests/seed.spec.ts
 
 import { randomUUID } from "node:crypto";
-import type { APIRequestContext, BrowserContext } from "@playwright/test";
-import { test, expect } from "../tests-vibed/fixtures";
-import { LoginPage } from "../pages/LoginPage";
+import type { APIRequestContext } from "@playwright/test";
+import { loggedInTest as test, expect } from "../fixtures";
 import type { ApiSeverity, Bug } from "../api/BugsApi";
 import users from "../../users.json" with { type: "json" };
 
 const [user] = users;
-
-type AuthState = Awaited<ReturnType<BrowserContext["storageState"]>>;
-let authState: AuthState | undefined;
 
 /** Unique per test, so each test only sees the bugs it created. */
 let token: string;
@@ -44,27 +40,6 @@ async function createBug(
 }
 
 test.describe("Deleting a bug", () => {
-  // Each test gets its own browser context, sharing only the saved login.
-  test.use({
-    // Playwright requires an object pattern for the fixture arguments, even when empty.
-    // eslint-disable-next-line no-empty-pattern
-    storageState: async ({}, use) => {
-      await use(authState);
-    },
-  });
-
-  // Arrange (shared): log in once and save the authentication state
-  test.beforeAll(async ({ browser, baseURL }) => {
-    const context = await browser.newContext({ baseURL });
-    const page = await context.newPage();
-    const loginPage = new LoginPage(page);
-    await loginPage.goto();
-    await loginPage.login(user.username, user.password);
-    await expect(page).toHaveURL(/\/board$/);
-    authState = await context.storageState();
-    await context.close();
-  });
-
   // Arrange (shared): create a fresh bug, then open the board showing it
   test.beforeEach(async ({ page, request, boardPage }) => {
     createdIds = [];

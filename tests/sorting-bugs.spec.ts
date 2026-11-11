@@ -2,16 +2,8 @@
 // seed: tests/seed.spec.ts
 
 import { randomUUID } from "node:crypto";
-import type { BrowserContext } from "@playwright/test";
-import { test, expect } from "./tests-vibed/fixtures";
-import { LoginPage } from "./pages/LoginPage";
+import { loggedInTest as test, expect } from "./fixtures";
 import type { ApiSeverity, Bug } from "./api/BugsApi";
-import users from "../users.json" with { type: "json" };
-
-const [user] = users;
-
-type AuthState = Awaited<ReturnType<BrowserContext["storageState"]>>;
-let authState: AuthState | undefined;
 
 /** The standard data set from the plan, created in this order. */
 const STANDARD_BUGS: { word: string; severity: ApiSeverity; owner: string }[] = [
@@ -32,27 +24,6 @@ function titles(...words: string[]): string[] {
 }
 
 test.describe("Sorting bugs", () => {
-  // Each test gets its own browser context, sharing only the saved login.
-  test.use({
-    // Playwright requires an object pattern for the fixture arguments, even when empty.
-    // eslint-disable-next-line no-empty-pattern
-    storageState: async ({}, use) => {
-      await use(authState);
-    },
-  });
-
-  // Arrange (shared): log in once and save the authentication state
-  test.beforeAll(async ({ browser, baseURL }) => {
-    const context = await browser.newContext({ baseURL });
-    const page = await context.newPage();
-    const loginPage = new LoginPage(page);
-    await loginPage.goto();
-    await loginPage.login(user.username, user.password);
-    await expect(page).toHaveURL(/\/board$/);
-    authState = await context.storageState();
-    await context.close();
-  });
-
   // Arrange (shared): create the standard data set and show only those bugs
   test.beforeEach(async ({ page, request, boardPage }) => {
     createdIds = [];

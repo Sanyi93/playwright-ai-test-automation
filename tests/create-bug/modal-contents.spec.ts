@@ -1,38 +1,12 @@
 // spec: specs/testing/create-bug.md
 // seed: tests/seed.spec.ts
 
-import type { BrowserContext } from "@playwright/test";
-import { test, expect } from "../tests-vibed/fixtures";
-import { LoginPage } from "../pages/LoginPage";
+import { loggedInTest as test, expect } from "../fixtures";
 import users from "../../users.json" with { type: "json" };
 
 const [user] = users;
 
-type AuthState = Awaited<ReturnType<BrowserContext["storageState"]>>;
-let authState: AuthState | undefined;
-
 test.describe("Modal contents and defaults", () => {
-  // Each test gets its own browser context, sharing only the saved login.
-  test.use({
-    // Playwright requires an object pattern for the fixture arguments, even when empty.
-    // eslint-disable-next-line no-empty-pattern
-    storageState: async ({}, use) => {
-      await use(authState);
-    },
-  });
-
-  // Arrange (shared): log in once and save the authentication state
-  test.beforeAll(async ({ browser, baseURL }) => {
-    const context = await browser.newContext({ baseURL });
-    const page = await context.newPage();
-    const loginPage = new LoginPage(page);
-    await loginPage.goto();
-    await loginPage.login(user.username, user.password);
-    await expect(page).toHaveURL(/\/board$/);
-    authState = await context.storageState();
-    await context.close();
-  });
-
   // Arrange (shared): every test starts on the board, already logged in
   test.beforeEach(async ({ page }) => {
     await page.goto("/board");

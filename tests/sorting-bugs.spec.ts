@@ -34,6 +34,8 @@ function titles(...words: string[]): string[] {
 test.describe("Sorting bugs", () => {
   // Each test gets its own browser context, sharing only the saved login.
   test.use({
+    // Playwright requires an object pattern for the fixture arguments, even when empty.
+    // eslint-disable-next-line no-empty-pattern
     storageState: async ({}, use) => {
       await use(authState);
     },
@@ -299,7 +301,7 @@ test.describe("Sorting bugs", () => {
 
   test.describe("Sort persistence", () => {
     test("the sort survives switching between the Open and Closed filters", async ({
-      page,
+      boardPage,
       sorting,
     }) => {
       // Arrange
@@ -307,8 +309,8 @@ test.describe("Sorting bugs", () => {
       await sorting.sortBy("ID");
 
       // Act
-      await page.getByRole("button", { name: "Closed", exact: true }).click();
-      await page.getByRole("button", { name: "Open", exact: true }).click();
+      await boardPage.showClosedBugs();
+      await boardPage.showOpenBugs();
 
       // Assert
       await sorting.expectSortIndicator("ID", "descending");
@@ -389,14 +391,10 @@ test.describe("Sorting bugs", () => {
     });
 
     test("the arrow is not part of the header button's accessible name", async ({
-      page,
       sorting,
     }) => {
       // Assert
-      const severityButton = page.getByRole("button", {
-        name: "Severity",
-        exact: true,
-      });
+      const severityButton = sorting.headerButtonByExactName("Severity");
       await expect(severityButton).toHaveCount(1);
       await expect(severityButton).toContainText("↓");
       await expect(sorting.header("Severity")).toHaveAttribute(

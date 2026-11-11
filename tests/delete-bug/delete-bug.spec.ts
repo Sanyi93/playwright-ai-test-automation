@@ -46,6 +46,8 @@ async function createBug(
 test.describe("Deleting a bug", () => {
   // Each test gets its own browser context, sharing only the saved login.
   test.use({
+    // Playwright requires an object pattern for the fixture arguments, even when empty.
+    // eslint-disable-next-line no-empty-pattern
     storageState: async ({}, use) => {
       await use(authState);
     },
@@ -84,7 +86,6 @@ test.describe("Deleting a bug", () => {
   });
 
   test("deleting a bug closes the modal and removes its row from the board", async ({
-    page,
     boardPage,
     editBugModal,
   }) => {
@@ -98,7 +99,7 @@ test.describe("Deleting a bug", () => {
     // Assert
     await expect(editBugModal.dialog).toBeHidden();
     await expect(boardPage.bugRowByTitle(targetBug.title)).toHaveCount(0);
-    await expect(page.getByRole("alert")).toHaveCount(0);
+    await expect(editBugModal.errorAlert).toHaveCount(0);
   });
 
   test("deleting a bug removes it from the database", async ({
@@ -186,14 +187,12 @@ test.describe("Deleting a bug", () => {
     });
     expect(closeResponse.status(), "close bug").toBe(200);
     await page.reload();
-    await page.getByRole("button", { name: "Closed", exact: true }).click();
+    await boardPage.showClosedBugs();
     await expect(boardPage.bugRowByTitle(targetBug.title)).toBeVisible();
 
     // Act
     await boardPage.openBug(targetBug.title);
-    await expect(
-      editBugModal.dialog.getByLabel("State", { exact: true }),
-    ).toHaveValue("closed");
+    await expect(editBugModal.stateSelect).toHaveValue("closed");
     await editBugModal.delete();
 
     // Assert

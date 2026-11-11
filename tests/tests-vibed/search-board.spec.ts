@@ -129,8 +129,6 @@ test("Check there is no bug after all bugs are deleted", async ({
 
   await loginPage.goto();
   await loginPage.login(user.username, user.password);
-  await expect(
-    boardPage.bugTable.getByText("No bugs.", { exact: true }),
-  ).toBeVisible();
+  await expect(boardPage.noBugsMessage).toBeVisible();
   await expect(boardPage.bugRows).toHaveCount(0);
 });

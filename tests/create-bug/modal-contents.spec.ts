@@ -14,6 +14,8 @@ let authState: AuthState | undefined;
 test.describe("Modal contents and defaults", () => {
   // Each test gets its own browser context, sharing only the saved login.
   test.use({
+    // Playwright requires an object pattern for the fixture arguments, even when empty.
+    // eslint-disable-next-line no-empty-pattern
     storageState: async ({}, use) => {
       await use(authState);
     },
@@ -38,21 +40,15 @@ test.describe("Modal contents and defaults", () => {
   });
 
   test("New Bug button opens the Create bug modal with all fields", async ({
-    page,
     boardPage,
     createBugModal,
   }) => {
     // 1. From /board click the 'New Bug' button in the title bar.
     await boardPage.openNewBugModal();
 
-    const dialog = createBugModal.dialog;
-    await expect(dialog).toBeVisible();
-    await expect(
-      dialog.getByRole("heading", { name: "Create bug" }),
-    ).toBeVisible();
-    await expect(
-      dialog.getByRole("button", { name: "Close", exact: true }),
-    ).toBeVisible();
+    await expect(createBugModal.dialog).toBeVisible();
+    await expect(createBugModal.heading).toBeVisible();
+    await expect(createBugModal.closeButton).toBeVisible();
 
     // Labelled fields with the expected element types
     await expect(createBugModal.titleInput).toBeVisible();
@@ -86,9 +82,9 @@ test.describe("Modal contents and defaults", () => {
     expect(saveBox.y).toBeGreaterThanOrEqual(descriptionBottom);
 
     // No validation messages initially
-    await expect(page.getByText("Title is required.")).not.toBeVisible();
-    await expect(page.getByText("Owner is required.")).not.toBeVisible();
-    await expect(page.getByText("Description is required.")).not.toBeVisible();
+    await expect(createBugModal.titleRequiredError).not.toBeVisible();
+    await expect(createBugModal.ownerRequiredError).not.toBeVisible();
+    await expect(createBugModal.descriptionRequiredError).not.toBeVisible();
 
     // The Title input has focus
     await expect(createBugModal.titleInput).toBeFocused();

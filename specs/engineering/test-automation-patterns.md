@@ -82,20 +82,30 @@ These rules follow Playwright's guide to fixtures: https://playwright.dev/docs/t
 
 - **One fixture per page object:** every class in `tests/pages/` has a fixture that provides it. The fixture's name is the class name in camelCase, for example `LoginPage` → `loginPage` and `Sorting` → `sorting`.
 - **Tests never construct page objects:** specs and their hooks (`beforeEach`, `afterEach`, `beforeAll`, `afterAll`) request page objects as fixtures, for example `async ({ boardPage, editBugModal }) => { ... }`. They never call `new LoginPage(page)` or any other page object constructor. Only fixture files construct page objects.
-- **Import from the fixtures, not from Playwright:** specs import `test` and `expect` from `tests/fixtures`, never directly from `@playwright/test`. Type-only imports from `@playwright/test`, such as `Page` or `BrowserContext`, are still allowed.
+- **Import from the fixtures, not from Playwright:** specs import `test` and `expect` from a fixture file in `tests/fixtures/` (see "Which fixture file a spec imports" below), never directly from `@playwright/test`. Type-only imports from `@playwright/test`, such as `Page` or `BrowserContext`, are still allowed.
 
 ### Where fixture files live
 
-All fixture files are in `tests/fixtures/`. Each file covers one concern:
+All fixture files are in `tests/fixtures/`. Each file covers one concern and builds on the one before it, so each file's `test` includes all the fixtures above it:
 
-| File | Contains |
-|---|---|
-| `tests/fixtures/pages.ts` | One test-scoped fixture for each page object in `tests/pages/`. |
-| `tests/fixtures/api.ts` | API helper fixtures, such as `bugsApi`, which also clean up the data they create. |
-| `tests/fixtures/auth.ts` | The shared login: a worker-scoped fixture that logs in once per worker and provides the saved storage state. |
-| `tests/fixtures/index.ts` | Combines the modules above with `mergeTests(...)` and exports `test` (page objects and API helpers; tests start logged out), `loggedInTest` (the same plus the shared login; tests start logged in) and `expect`. Specs import from here. |
+| File | Extends | Contains |
+|---|---|---|
+| `tests/fixtures/pages.ts` | `@playwright/test` | One test-scoped fixture for each page object in `tests/pages/`. |
+| `tests/fixtures/api.ts` | `pages.ts` | API helper fixtures, such as `bugsApi`, which also clean up the data they create. |
+| `tests/fixtures/auth.ts` | `api.ts` | The shared login: a worker-scoped fixture that logs in once per worker and provides the saved storage state. |
+
+Each file exports its `test` and re-exports `expect` from `@playwright/test`. There is no combining index file.
 
 Add a new file only for a new concern. A new page object goes into `pages.ts`, not into a file of its own.
+
+### Which fixture file a spec imports
+
+| The spec needs | Import |
+|---|---|
+| To start logged out, for example to test the login itself | `import { test, expect } from "../fixtures/api";` |
+| To start logged in | `import { test, expect } from "../fixtures/auth";` |
+
+Adjust the relative path to the spec's folder: a spec directly in `tests/` uses `./fixtures/api` or `./fixtures/auth`.
 
 ### How a fixture is written
 
@@ -125,16 +135,25 @@ Add a new file only for a new concern. A new page object goes into `pages.ts`, n
 - **Page object fixtures only construct:** a page object fixture creates the object and passes it to `use`. It does not navigate, log in or create data, so the test's Arrange step stays visible in the spec. Shared navigation and test data belong in `beforeEach`, or in a dedicated fixture when several files need the same setup.
 - **Test scope by default:** page object fixtures are test-scoped, so each test gets a new instance bound to its own `page`.
 - **Worker scope for expensive shared state:** use `{ scope: "worker" }` only for state that may be shared by every test in a worker, such as the login. Worker-scoped fixtures cannot depend on `page` or other test-scoped fixtures. They create their own context from `browser`.
-- **Combine with `mergeTests`:** `tests/fixtures/index.ts` merges the fixture modules and re-exports `expect`:
+- **Build on the previous file:** each fixture file extends the `test` exported by the file before it, rather than Playwright's base `test`, and re-exports `expect`:
 
   ```ts
-  import { mergeTests } from "@playwright/test";
-  import { test as pageTest } from "./pages";
-  import { test as apiTest } from "./api";
-  import { test as authTest } from "./auth";
+  // tests/fixtures/api.ts
+  import { test as base } from "./pages";
+  import { BugsApi } from "../api/BugsApi";
 
-  export const test = mergeTests(pageTest, apiTest);
-  export const loggedInTest = mergeTests(test, authTest);
+  type ApiFixtures = {
+    bugsApi: BugsApi;
+  };
+
+  export const test = base.extend<ApiFixtures>({
+    bugsApi: async ({ request }, use) => {
+      const bugsApi = new BugsApi(request);
+      await use(bugsApi);
+      await bugsApi.deleteCreated();
+    },
+  });
+
   export { expect } from "@playwright/test";
   ```
 
@@ -147,8 +166,8 @@ The login is the only state tests may share (`CLAUDE.md` rule 7). It is provided
 - A worker-scoped fixture, for example `authState`, creates its own browser context, logs in once per worker with `LoginPage`, saves `context.storageState()`, closes the context, and passes the state to `use`.
 - The same module overrides Playwright's built-in `storageState` fixture with that state, so every test that uses this module starts logged in, in its own fresh browser context.
 - Worker-scoped fixtures cannot use the test-scoped `baseURL` fixture, so `authState` reads it from `workerInfo.project.use.baseURL`.
-- Specs that need a logged-in user import `loggedInTest` under the usual name: `import { loggedInTest as test, expect } from "../fixtures";`. They then only navigate in `beforeEach`, for example to `/board`.
-- Specs that test the login itself, such as `tests/seed.spec.ts`, import the plain `test`, start logged out and log in through `loginPage`.
+- Specs that need a logged-in user import from `auth.ts`: `import { test, expect } from "../fixtures/auth";`. They then only navigate in `beforeEach`, for example to `/board`.
+- Specs that test the login itself, such as `tests/seed.spec.ts`, import from `api.ts`, start logged out and log in through `loginPage`.
 
 ### Adding a page object
 

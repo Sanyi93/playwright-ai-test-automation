@@ -13,6 +13,6 @@ Project-wide test automation patterns: `specs/engineering/test-automation-patter
 - Use page objects instead of long, raw page call chains in new and refactored tests
   - Page object classes belong in `tests/pages/`: one class per file, one class per page of the app
   - Every page object has a fixture in `tests/fixtures/`; tests request page objects as fixtures and never construct them with `new`
-  - Import `test` and `expect` from `tests/fixtures`, not from `@playwright/test`
+  - Import `test` and `expect` from `tests/fixtures/api.ts` (tests start logged out) or `tests/fixtures/auth.ts` (tests start logged in), not from `@playwright/test`
   - Follow Playwright's fixture conventions: https://playwright.dev/docs/test-fixtures
   - Follow Playwright's page object conventions: https://playwright.dev/docs/pom

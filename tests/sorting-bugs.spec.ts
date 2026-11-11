@@ -2,7 +2,7 @@
 // seed: tests/seed.spec.ts
 
 import { randomUUID } from "node:crypto";
-import { loggedInTest as test, expect } from "./fixtures";
+import { test, expect } from "./fixtures/auth";
 import type { ApiSeverity, Bug } from "./api/BugsApi";
 
 /** The standard data set from the plan, created in this order. */

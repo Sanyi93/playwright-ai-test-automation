@@ -1,7 +1,7 @@
 // spec: specs/testing/create-bug.md
 // seed: tests/seed.spec.ts
 
-import { loggedInTest as test, expect } from "../fixtures";
+import { test, expect } from "../fixtures/auth";
 import users from "../../users.json" with { type: "json" };
 
 const [user] = users;

@@ -3,7 +3,7 @@
 
 import { randomUUID } from "node:crypto";
 import type { APIRequestContext } from "@playwright/test";
-import { loggedInTest as test, expect } from "../fixtures";
+import { test, expect } from "../fixtures/auth";
 import type { ApiSeverity, Bug } from "../api/BugsApi";
 import users from "../../users.json" with { type: "json" };
 

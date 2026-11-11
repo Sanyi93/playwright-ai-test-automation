@@ -1,4 +1,5 @@
-import { test as base, type BrowserContext } from "@playwright/test";
+import type { BrowserContext } from "@playwright/test";
+import { test as base } from "./api";
 import { LoginPage } from "../pages/LoginPage";
 import users from "../../users.json" with { type: "json" };
 
@@ -12,9 +13,10 @@ type AuthWorkerFixtures = {
 const [user] = users;
 
 /**
- * The shared login. `authState` logs in once per worker and saves the
- * browser's storage state; the `storageState` override gives every test a
- * fresh browser context that starts logged in with that state.
+ * The shared login, on top of the page object and API fixtures. `authState`
+ * logs in once per worker and saves the browser's storage state; the
+ * `storageState` override gives every test a fresh browser context that
+ * starts logged in with that state.
  */
 export const test = base.extend<object, AuthWorkerFixtures>({
   authState: [
@@ -40,3 +42,5 @@ export const test = base.extend<object, AuthWorkerFixtures>({
     await use(authState);
   },
 });
+
+export { expect } from "@playwright/test";

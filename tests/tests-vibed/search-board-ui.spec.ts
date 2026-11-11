@@ -1,4 +1,4 @@
-import { test, expect } from "../fixtures";
+import { test, expect } from "../fixtures/api";
 import type { BoardPage } from "../pages/BoardPage";
 import type { CreateBugModal } from "../pages/CreateBugModal";
 import users from "../../users.json" with { type: "json" };

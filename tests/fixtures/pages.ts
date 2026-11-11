@@ -31,3 +31,5 @@ export const test = base.extend<PageFixtures>({
     await use(new Sorting(page));
   },
 });
+
+export { expect } from "@playwright/test";

@@ -8,9 +8,10 @@ Test plan for deleting a bug in BuggyBoard (http://localhost:5173). It is based 
 
 - **Opening a bug:** each bug row on the board is exposed as a `button` whose accessible name is "ID SEVERITY TITLE OWNER" (for example `"HIGH [token] Login fails buggy"`). Clicking it sends `GET /api/bugs/:id` and opens a `dialog` named "Edit bug #<id>".
 - **Edit modal buttons:** the footer has **Delete** on the left and **Cancel** and **Save** on the right. Delete is red outlined text on a white background, and it is enabled even while Save is disabled because nothing has changed.
-- **Deleting:** clicking Delete sends `DELETE /api/bugs/:id` immediately, with no confirmation step. On `204` the modal closes, the board reloads its list (`GET /api/bugs`), and the row disappears. Afterwards `GET /api/bugs/:id` returns `404` with `{"error":"not_found","message":"Bug not found."}`.
+- **Confirmation:** clicking Delete in the Edit bug modal does not delete anything. It opens a second `dialog` named "Delete bug #<id>?" on top of the Edit bug modal, which stays open. The confirmation's message names the bug and ends "This cannot be undone.". It has **Delete** and **Cancel** buttons and a "Close" (×) button, and focus starts on Cancel. Cancel, × and Escape close only the confirmation and send no request. Clicking its backdrop does nothing.
+- **Deleting:** clicking **Delete in the confirmation** sends `DELETE /api/bugs/:id`. On `204` both modals close, the board reloads its list (`GET /api/bugs`), and the row disappears. Afterwards `GET /api/bugs/:id` returns `404` with `{"error":"not_found","message":"Bug not found."}`.
 - **Empty board:** when the database has no bugs left, the table shows the row "No bugs.". When bugs exist but none match the current state filter, it shows "No bugs matched.".
-- **Errors:** errors are shown inside the modal as an `alert` list item, and the modal stays open:
+- **Errors:** when the delete request fails, the confirmation closes. The error is shown inside the Edit bug modal as an `alert` list item, and that modal stays open:
   - server error: the response's `message` is shown (for example "Internal error"), and the bug is not deleted
   - network failure: "Something went wrong. Please try again."
   - bug already deleted elsewhere: "Bug not found."
@@ -23,7 +24,8 @@ These rules apply to every scenario:
 - **Unique titles:** every created bug's title starts with a unique token, for example `zq<uuid>` as in `tests/tests-vibed/search-board.spec.ts`, so rows can be found by title on a shared board. Rows must always be located by that token, never by position or by ID.
 - **Cleanup:** the `bugsApi` fixture deletes whatever it created after each test. A delete that the test already performed returns `404` during cleanup, which is expected and harmless.
 - **Order matters:** create the bugs first, then navigate to `/board` (or reload), so that the board's initial `GET /api/bugs` includes them.
-- **Shared login (CLAUDE.md rule 7):** log in once per file in `beforeAll`, save the storage state (the app keeps the logged-in user in `localStorage` as `buggyboard_user`), and reuse it for every test. Only the authentication state is shared.
+- **Shared login (CLAUDE.md rule 7):** import `test` and `expect` from `tests/fixtures/auth.ts`, whose worker-scoped fixture logs in once per worker and gives every test a logged-in browser context. Only the authentication state is shared.
+- **"Click Delete" means confirming too:** in groups 2 to 5, "click Delete" means clicking Delete in the Edit bug modal (`editBugModal.delete()`) and then Delete in the confirmation (`deleteBugConfirmModal.confirm()`). Group 6 tests the confirmation itself.
 - **Never delete all bugs:** scenarios delete only the bugs they created. Do not depend on, or assert, an empty database, because other test files share it. Scenario 2.6 creates an extra unrelated bug so that its result does not depend on what else is in the database.
 - **Seed:** `tests/seed.spec.ts` (logs in as `buggy`, the first user in `users.json`, and lands on `/board`).
 
@@ -246,20 +248,111 @@ The unrelated bug is required. The board shows "No bugs matched." only when the 
     - expect: The row is gone.
   - Record this as a possible defect. If the product decision is to keep the current behaviour, change step 1's expected result to match it.
 
-#### 5.2 Observation: Delete has no confirmation step
+### 6. Delete confirmation
 
-**File:** `tests/delete-bug/delete-bug.spec.ts`
+**Seed:** `tests/seed.spec.ts`
 
-**Arrange:** create one open bug `"<token> No confirmation"`, then open `/board`.
+These scenarios follow the acceptance criteria in `specs/features/12-delete-bug.md`. Every scenario uses the same Arrange step, done in `beforeEach`: create one open bug `"<token> Delete confirmation target"` with `bugsApi`, open `/board`, search for `<token>`, and open the bug's Edit bug modal (named "Edit bug #<id>").
+
+#### 6.1 Clicking Delete asks for confirmation and names the bug
+
+**File:** `tests/delete-bug/delete-confirmation.spec.ts`
 
 **Steps:**
-  1. Open the bug's Edit bug modal and click Delete.
-    - expect: The bug is deleted immediately. No second dialog, `alertdialog` or browser `confirm()` appears.
-  - `specs/features/12-delete-bug.md` does not require a confirmation, so this matches the spec. It is listed because a single click permanently deletes data. If a confirmation step is added later, this scenario and the steps in groups 2 to 4 need updating.
+  1. Click Delete in the Edit bug modal.
+    - expect: A dialog named "Delete bug #<id>?" is visible, with the heading "Delete bug #<id>?".
+    - expect: Its message contains `#<id> "<title>"` and "This cannot be undone.".
+
+#### 6.2 Clicking Delete does not delete the bug yet
+
+**File:** `tests/delete-bug/delete-confirmation.spec.ts`
+
+**Steps:**
+  1. Click Delete in the Edit bug modal.
+    - expect: The confirmation and the Edit bug modal are both visible.
+    - expect: `GET /api/bugs/<id>` returns `200`.
+
+#### 6.3 The confirmation offers Delete, Cancel and Close, with focus on Cancel
+
+**File:** `tests/delete-bug/delete-confirmation.spec.ts`
+
+**Steps:**
+  1. Click Delete in the Edit bug modal.
+    - expect: The confirmation has visible "Delete", "Cancel" and "Close" (×) buttons.
+    - expect: The "Cancel" button has keyboard focus.
+
+#### 6.4 Confirming the deletion removes the bug from the database
+
+**File:** `tests/delete-bug/delete-confirmation.spec.ts`
+
+**Steps:**
+  1. Click Delete in the Edit bug modal, then Delete in the confirmation, while waiting for the `DELETE /api/bugs/<id>` response.
+    - expect: The response status is `204`, and `GET /api/bugs/<id>` returns `404`.
+
+#### 6.5 Confirming the deletion closes both modals and removes the bug from the board
+
+**File:** `tests/delete-bug/delete-confirmation.spec.ts`
+
+**Steps:**
+  1. Click Delete in the Edit bug modal, then Delete in the confirmation.
+    - expect: The confirmation and the Edit bug modal are both hidden.
+    - expect: No row for the bug is shown on the board.
+
+#### 6.6 Cancelling the confirmation leaves the bug in place
+
+**File:** `tests/delete-bug/delete-confirmation.spec.ts`
+
+**Steps:**
+  1. Click Delete in the Edit bug modal, then Cancel in the confirmation.
+    - expect: The confirmation is hidden, and no `DELETE` request was sent.
+    - expect: `GET /api/bugs/<id>` returns `200`, and the bug's row is still on the board.
+
+#### 6.7 Cancelling the confirmation returns to the Edit bug modal with unsaved edits kept
+
+**File:** `tests/delete-bug/delete-confirmation.spec.ts`
+
+**Steps:**
+  1. Change the Title in the Edit bug modal without saving, click Delete, then Cancel in the confirmation.
+    - expect: The confirmation is hidden, the Edit bug modal is visible, and its Title field still shows the changed title.
+
+#### 6.8 Closing the confirmation with the × leaves the bug in place
+
+**File:** `tests/delete-bug/delete-confirmation.spec.ts`
+
+**Steps:**
+  1. Click Delete in the Edit bug modal, then the "Close" (×) button in the confirmation.
+    - expect: The confirmation is hidden, the Edit bug modal is visible, and `GET /api/bugs/<id>` returns `200`.
+
+#### 6.9 Pressing Escape closes only the confirmation and leaves the bug in place
+
+**File:** `tests/delete-bug/delete-confirmation.spec.ts`
+
+**Steps:**
+  1. Click Delete in the Edit bug modal, then press Escape.
+    - expect: The confirmation is hidden, the Edit bug modal is still visible, and `GET /api/bugs/<id>` returns `200`.
+
+#### 6.10 Clicking outside the confirmation does not close it
+
+**File:** `tests/delete-bug/delete-confirmation.spec.ts`
+
+**Steps:**
+  1. Click Delete in the Edit bug modal, then click the dimmed backdrop near the left edge of the viewport, at x 5 and y 400.
+    - expect: The confirmation is still visible, and `GET /api/bugs/<id>` returns `200`.
+
+#### 6.11 A failed deletion keeps the bug and shows an error in the Edit bug modal
+
+**File:** `tests/delete-bug/delete-confirmation.spec.ts`
+
+**Arrange:** in addition to the shared setup, route `**/api/bugs/*` so that only `DELETE` requests are fulfilled with status `500` and body `{"error":"server_error","message":"Internal error"}`.
+
+**Steps:**
+  1. Click Delete in the Edit bug modal, then Delete in the confirmation.
+    - expect: The confirmation is hidden, and the Edit bug modal is visible with the `alert` "Internal error".
+    - expect: The bug's row is still on the board, and `GET /api/bugs/<id>` returns `200`.
 
 ## Not Covered or Not Verified
 
-- **Double-clicking Delete:** the second request would probably return `404` and show "Bug not found." in a modal that is already closing. This was not exercised.
-- **Keyboard-only deletion:** tabbing to Delete and pressing Enter or Space was not checked.
+- **Double-clicking Delete in the confirmation:** both buttons are disabled while the request is in flight, so a second request should not be sent. This was not exercised.
+- **Keyboard-only deletion:** focus starts on Cancel (scenario 6.3). Tabbing to the confirmation's Delete and pressing Enter was not checked.
 - **Other users' bugs:** every user can see and delete every bug. Permission rules are not specified, so they are not tested.
 - **Delete from other places:** the only delete entry point is the Edit bug modal. There is no delete control on the board rows.

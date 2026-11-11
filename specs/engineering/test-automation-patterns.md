@@ -26,6 +26,7 @@ Project-wide patterns for the Playwright end-to-end tests in `tests/`. This file
 | Board page (title bar, search, bug table) | `/board` | `tests/pages/BoardPage.ts` | `boardPage` |
 | Create bug modal | "New Bug" button on the board | `tests/pages/CreateBugModal.ts` | `createBugModal` |
 | Edit bug modal | clicking a bug row on the board | `tests/pages/EditBugModal.ts` | `editBugModal` |
+| Delete bug confirmation modal | Delete button in the Edit bug modal | `tests/pages/DeleteBugConfirmModal.ts` | `deleteBugConfirmModal` |
 | Board column sorting | column headers of the board table | `tests/pages/Sorting.ts` | `sorting` |
 Update this table when you add a page object.
 

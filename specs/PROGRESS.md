@@ -119,6 +119,10 @@ Checklists are updated as each feature is completed. After each feature, the AI 
 - [x] Backend implemented (deleteBug, DELETE /api/bugs/:id)
 - [x] Frontend implemented (Delete button in Edit bug modal; removes bug, closes modal, board refreshes)
 - [x] Linter/errors resolved
+- [x] Spec updated: delete asks for confirmation in a separate modal before deleting
+- [x] Frontend implemented (delete confirmation modal: Delete/Cancel, X, Escape, focus on Cancel, error handling)
+- [x] Tests and test plan updated (`specs/testing/delete-bug.md`, `tests/delete-bug/`, `EditBugModal` page object)
+- [x] Review done
 
 ---
 

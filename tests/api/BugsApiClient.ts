@@ -37,7 +37,7 @@ export interface ApiError {
  * Seeds and removes bugs through the backend API so tests can arrange their
  * own data. Every bug created here is deleted again by `deleteCreated()`.
  */
-export class BugsApi {
+export class BugsApiClient {
   private readonly request: APIRequestContext;
   private readonly createdIds: number[] = [];
 

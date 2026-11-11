@@ -1,5 +1,5 @@
 import { expect, type APIResponse } from "@playwright/test";
-import type { ApiError } from "./BugsApi";
+import type { ApiError } from "./BugsApiClient";
 
 /** Asserts a JSON error from the API's routes: status, error code and message. */
 export async function expectApiError(

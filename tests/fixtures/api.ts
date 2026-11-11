@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { test as base } from "./pages";
-import { BugsApi, type StoredBug } from "../api/BugsApi";
+import { BugsApiClient, type StoredBug } from "../api/BugsApiClient";
 
 /** API helper fixtures, on top of the page object fixtures. Each one cleans up the data it created. */
 type ApiFixtures = {
-  bugsApi: BugsApi;
+  bugsApi: BugsApiClient;
   /**
    * A unique prefix for this test's bug titles, so tests never see or touch
    * each other's data. Any bug whose title still starts with it is deleted
@@ -15,7 +15,7 @@ type ApiFixtures = {
 
 export const test = base.extend<ApiFixtures>({
   bugsApi: async ({ request }, use) => {
-    const bugsApi = new BugsApi(request);
+    const bugsApi = new BugsApiClient(request);
     await use(bugsApi);
     // Teardown: runs even when the test fails.
     await bugsApi.deleteCreated();

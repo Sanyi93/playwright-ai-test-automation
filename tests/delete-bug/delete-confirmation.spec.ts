@@ -3,7 +3,7 @@
 
 import { randomUUID } from "node:crypto";
 import { test, expect } from "../fixtures/auth";
-import type { Bug } from "../api/BugsApi";
+import type { Bug } from "../api/BugsApiClient";
 import users from "../../users.json" with { type: "json" };
 
 const [user] = users;

@@ -2,7 +2,7 @@
 
 import { test, expect } from "../fixtures/api";
 import { expectApiError } from "../api/expectApiError";
-import type { StoredBug } from "../api/BugsApi";
+import type { StoredBug } from "../api/BugsApiClient";
 
 test.describe("POST /api/bugs", () => {
   test("creates a valid bug as Open and returns it with its ID", async ({

@@ -3,7 +3,7 @@
 
 import { randomUUID } from "node:crypto";
 import { test, expect } from "./fixtures/auth";
-import type { ApiSeverity, Bug } from "./api/BugsApi";
+import type { ApiSeverity, Bug } from "./api/BugsApiClient";
 
 /** The standard data set from the plan, created in this order. */
 const STANDARD_BUGS: { word: string; severity: ApiSeverity; owner: string }[] = [

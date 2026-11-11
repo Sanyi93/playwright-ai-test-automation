@@ -1,7 +1,7 @@
 // plan: specs/testing/rest-api.md (3. GET /api/bugs)
 
 import { test, expect } from "../fixtures/api";
-import type { StoredBug } from "../api/BugsApi";
+import type { StoredBug } from "../api/BugsApiClient";
 
 test.describe("GET /api/bugs", () => {
   test("lists newly created bugs with all their fields", async ({

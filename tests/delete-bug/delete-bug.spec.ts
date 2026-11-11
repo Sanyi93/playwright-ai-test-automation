@@ -4,7 +4,7 @@
 import { randomUUID } from "node:crypto";
 import type { APIRequestContext } from "@playwright/test";
 import { test, expect } from "../fixtures/auth";
-import type { ApiSeverity, Bug } from "../api/BugsApi";
+import type { ApiSeverity, Bug } from "../api/BugsApiClient";
 import users from "../../users.json" with { type: "json" };
 
 const [user] = users;

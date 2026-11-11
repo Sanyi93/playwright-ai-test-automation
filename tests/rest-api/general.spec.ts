@@ -1,7 +1,7 @@
 // plan: specs/testing/rest-api.md (8. Behaviour shared by all endpoints)
 
 import { test, expect } from "../fixtures/api";
-import type { StoredBug } from "../api/BugsApi";
+import type { StoredBug } from "../api/BugsApiClient";
 
 const MALFORMED_JSON = "{bad";
 const JSON_HEADERS = { "Content-Type": "application/json" };

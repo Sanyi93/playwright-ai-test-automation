@@ -2,7 +2,7 @@
 
 import { test, expect } from "../fixtures/api";
 import { expectApiError } from "../api/expectApiError";
-import type { StoredBug } from "../api/BugsApi";
+import type { StoredBug } from "../api/BugsApiClient";
 
 /** The bug each test updates, created in beforeEach. */
 let original: StoredBug;

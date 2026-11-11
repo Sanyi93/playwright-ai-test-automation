@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { test, expect } from "../fixtures/api";
 import users from "../../users.json" with { type: "json" };
-import type { Bug } from "../api/BugsApi";
+import type { Bug } from "../api/BugsApiClient";
 
 const user = users.find((u) => u.username === "buggy");
 if (!user) {

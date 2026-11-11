@@ -3,6 +3,7 @@ import { LoginPage } from "../pages/LoginPage";
 import { BoardPage } from "../pages/BoardPage";
 import { CreateBugModal } from "../pages/CreateBugModal";
 import { EditBugModal } from "../pages/EditBugModal";
+import { DeleteBugConfirmModal } from "../pages/DeleteBugConfirmModal";
 import { Sorting } from "../pages/Sorting";
 
 /** One test-scoped fixture per page object in tests/pages/. */
@@ -11,6 +12,7 @@ type PageFixtures = {
   boardPage: BoardPage;
   createBugModal: CreateBugModal;
   editBugModal: EditBugModal;
+  deleteBugConfirmModal: DeleteBugConfirmModal;
   sorting: Sorting;
 };
 
@@ -26,6 +28,9 @@ export const test = base.extend<PageFixtures>({
   },
   editBugModal: async ({ page }, use) => {
     await use(new EditBugModal(page));
+  },
+  deleteBugConfirmModal: async ({ page }, use) => {
+    await use(new DeleteBugConfirmModal(page));
   },
   sorting: async ({ page }, use) => {
     await use(new Sorting(page));

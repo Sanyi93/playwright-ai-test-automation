@@ -26,3 +26,5 @@ test-results/
 .playwright-mcp
 # Playwright CLI output (may contain credentials)
 .playwright-cli/
+/playwright-screenshots/
+/playwright-videos/

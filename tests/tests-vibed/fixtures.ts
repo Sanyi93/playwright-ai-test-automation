@@ -3,6 +3,7 @@ import { LoginPage } from "../pages/LoginPage";
 import { BoardPage } from "../pages/BoardPage";
 import { CreateBugModal } from "../pages/CreateBugModal";
 import { EditBugModal } from "../pages/EditBugModal";
+import { Sorting } from "../pages/Sorting";
 import { BugsApi } from "../api/BugsApi";
 
 interface Fixtures {
@@ -10,6 +11,7 @@ interface Fixtures {
   boardPage: BoardPage;
   createBugModal: CreateBugModal;
   editBugModal: EditBugModal;
+  sorting: Sorting;
   bugsApi: BugsApi;
 }
 
@@ -25,6 +27,9 @@ export const test = base.extend<Fixtures>({
   },
   editBugModal: async ({ page }, use) => {
     await use(new EditBugModal(page));
+  },
+  sorting: async ({ page }, use) => {
+    await use(new Sorting(page));
   },
   bugsApi: async ({ request }, use) => {
     const bugsApi = new BugsApi(request);

@@ -176,8 +176,19 @@ The login is the only state tests may share (`CLAUDE.md` rule 7). It is provided
 2. Add a fixture for it to `tests/fixtures/pages.ts`, named after the class in camelCase.
 3. Add a row for it to the "Current page objects" table, with its fixture name.
 
+## Test data in parallel runs
+
+Tests run in parallel (`fullyParallel: true`) against one shared database, so every test must work no matter what other tests are doing at the same moment.
+
+- **Use the `token` fixture for every bug a test creates:** start each title with `${token}`, never with `Date.now()` or a fixed text. The token is a UUID, so it is unique even across workers that start in the same millisecond. Its teardown deletes every bug whose title still starts with it, through the API, even when the test fails.
+- **Clean up through fixtures, not through the UI:** create test data with `bugsApi`, or through the UI when the UI is what is being tested, and let the `bugsApi` and `token` teardowns delete it. Do not delete test data by clicking through the app in `afterEach`, because that is slow and stops at the first failure, leaving the remaining bugs behind.
+- **Create the data the assertion needs:** a test must not depend on bugs it did not create. For example, the board shows "No bugs matched." only while at least one bug exists, so a test that expects that message creates a bug first.
+- **Assert only on your own data:** search or filter by the test's token, and never assert on global state, such as the total number of bugs or an empty board.
+- **Never delete data the test did not create:** a test may only delete its own bugs, identified by ID or by its token.
+- **Destructive tests run only in the `cleanup` project:** a test that must affect all data, such as deleting every bug, goes in a `*.teardown.ts` file under `tests/cleanup/`. `playwright.config.ts` runs the `cleanup` project as the teardown of the `chromium` project, so it starts only after every other test has finished. Playwright always runs a project's teardown, even when only some files are selected. Add `--no-deps` to a run to skip it.
+
 ## Related rules
 
 - Atomic, independent tests using Arrange-Act-Assert, and a shared login state: `CLAUDE.md` rules 6 and 7, and `.claude/rules/testing.md`.
-- Test data: each test creates the data it needs, through the API where possible, and deletes it again afterwards.
+- Test data: each test creates the data it needs, through the API where possible, and deletes it again afterwards. See "Test data in parallel runs" above.
 - Test plans: `specs/testing/`.

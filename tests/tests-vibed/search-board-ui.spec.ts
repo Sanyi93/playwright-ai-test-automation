@@ -4,42 +4,43 @@ import type { CreateBugModal } from "../pages/CreateBugModal";
 import users from "../../users.json" with { type: "json" };
 
 const [user] = users;
-let createdTitles: string[] = [];
 
+/**
+ * Creates bugs through the UI. Their titles must start with the test's
+ * `token`: the token fixture deletes every such bug after the test, through
+ * the API, even if the test fails.
+ */
 async function createBugs(
   boardPage: BoardPage,
   createBugModal: CreateBugModal,
-  titles: string[]
+  titles: string[],
 ): Promise<void> {
   for (const title of titles) {
     await boardPage.openNewBugModal();
     await createBugModal.fill({ title, severity: "MID", description: "Search test bug." });
     await createBugModal.save();
     await expect(createBugModal.dialog).toBeHidden();
-    createdTitles.push(title);
   }
 }
 
 test.describe("Search board (UI only)", () => {
   test.beforeEach(async ({ loginPage }) => {
-    createdTitles = [];
     await loginPage.goto();
     await loginPage.login(user.username, user.password);
   });
 
-  test.afterEach(async ({ boardPage, editBugModal, deleteBugConfirmModal }) => {
-    await boardPage.search("");
-    for (const title of createdTitles) {
-      await boardPage.openBug(title);
-      await editBugModal.delete();
-      await deleteBugConfirmModal.confirm();
-      await expect(editBugModal.dialog).toBeHidden();
-    }
-  });
+  test("shows no bugs when the search matches no bug title", async ({
+    boardPage,
+    createBugModal,
+    token,
+  }) => {
+    // Arrange: the board must hold at least one bug, or it shows "No bugs."
+    await createBugs(boardPage, createBugModal, [`${token} Login fails`]);
 
-  test("shows no bugs when the search matches no bug title", async ({ boardPage }) => {
-    await boardPage.search(`no bug has this title ${Date.now()}`);
+    // Act
+    await boardPage.search(`${token} no such title`);
 
+    // Assert
     await expect(boardPage.noBugsMatchedMessage).toBeVisible();
     await expect(boardPage.bugRows).toHaveCount(0);
   });
@@ -47,31 +48,40 @@ test.describe("Search board (UI only)", () => {
   test("shows only the bug whose title matches exactly one bug", async ({
     boardPage,
     createBugModal,
+    token,
   }) => {
-    const id = Date.now();
-    await createBugs(boardPage, createBugModal, [`${id} Login fails`, `${id} Logout missing`]);
+    // Arrange
+    await createBugs(boardPage, createBugModal, [
+      `${token} Login fails`,
+      `${token} Logout missing`,
+    ]);
 
-    await boardPage.search(`${id} Login fails`);
+    // Act
+    await boardPage.search(`${token} Login fails`);
 
+    // Assert
     await expect(boardPage.bugRows).toHaveCount(1);
-    await expect(boardPage.bugRowByTitle(`${id} Login fails`)).toBeVisible();
+    await expect(boardPage.bugRowByTitle(`${token} Login fails`)).toBeVisible();
   });
 
   test("shows only the two bugs whose titles match the search", async ({
     boardPage,
     createBugModal,
+    token,
   }) => {
-    const id = Date.now();
+    // Arrange
     await createBugs(boardPage, createBugModal, [
-      `${id} Login fails`,
-      `${id} Login times out`,
-      `${id} Logout missing`,
+      `${token} Login fails`,
+      `${token} Login times out`,
+      `${token} Logout missing`,
     ]);
 
-    await boardPage.search(`${id} Login`);
+    // Act
+    await boardPage.search(`${token} Login`);
 
+    // Assert
     await expect(boardPage.bugRows).toHaveCount(2);
-    await expect(boardPage.bugRowByTitle(`${id} Login fails`)).toBeVisible();
-    await expect(boardPage.bugRowByTitle(`${id} Login times out`)).toBeVisible();
+    await expect(boardPage.bugRowByTitle(`${token} Login fails`)).toBeVisible();
+    await expect(boardPage.bugRowByTitle(`${token} Login times out`)).toBeVisible();
   });
 });

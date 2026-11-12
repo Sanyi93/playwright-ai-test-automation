@@ -37,6 +37,15 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      /* Runs only after every chromium test has finished. */
+      teardown: 'cleanup',
+    },
+    {
+      /* Destructive tests (e.g. deleting every bug). Never runs in parallel
+       * with other tests, because it is chromium's teardown project. */
+      name: 'cleanup',
+      testMatch: /.*\.teardown\.ts/,
+      use: { ...devices['Desktop Chrome'] },
     },
 
     /* Test against mobile viewports. */

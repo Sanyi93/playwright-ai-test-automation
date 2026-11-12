@@ -24,6 +24,7 @@ All product and engineering context **shall** live in Markdown under `specs/`. N
 |                           | `engineering/coding-standards.md` – Style, DDD, service layer, errors/linting.                           |
 |                           | `engineering/development-process.md` – Spec-first, feature-by-feature, review pauses, progress tracking. |
 |                           | `engineering/test-automation-patterns.md` – Playwright test patterns: page objects, fixtures, assertions. |
+|                           | `engineering/pipelines.md` – CI pipelines: the "Run Playwright Tests" GitHub Actions workflow.            |
 | **`specs/` (root)**       |                                                                                                          |
 |                           | `constitution.md` – This file: the supreme reference for how we work.                                    |
 |                           | `PROGRESS.md` – The single checklist of what’s done per feature; updated after each feature.             |

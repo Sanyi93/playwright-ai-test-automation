@@ -8,5 +8,6 @@ This folder holds **technical context**: how we build and run the app, and what 
 - **api-conventions.md** – Backend API routes must use the `/api` path prefix.
 - **gherkin-standards.md** – How to write Gherkin scenarios in feature specs (BDD, Given/When/Then, one behavior per scenario, Cucumber syntax).
 - **test-automation-patterns.md** – Project-wide Playwright test patterns: page objects in `tests/pages/` (one class per file, one per page), fixtures, and where assertions go.
+- **pipelines.md** – CI pipelines: the "Run Playwright Tests" GitHub Actions workflow, with its triggers (pull requests, merges to `main`, manual runs), caching, HTML reports and uploaded test artifacts.
 
 You can add more engineering docs here (e.g. folder structure, deployment, security) as needed.
